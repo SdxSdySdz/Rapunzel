@@ -1,16 +1,20 @@
+using System.Collections;
 using Sources;
 using UnityEngine;
 using UnityEngine.Events;
+using DG.Tweening;
 
 [RequireComponent(typeof(Follower))]
 [RequireComponent(typeof(LeftRightMover))]
 public class Rapunzel : MonoBehaviour
 {
+    [SerializeField] private Transform _lyingPoint;
     [SerializeField] private Animator _animator;
     [SerializeField] private Hair _hair;
 
     private Follower _follower;
     private LeftRightMover _leftRightMover;
+    private Camera _camera;
     
     public event UnityAction Finished;
 
@@ -18,6 +22,7 @@ public class Rapunzel : MonoBehaviour
     {
         _follower = GetComponent<Follower>();
         _leftRightMover = GetComponent<LeftRightMover>();
+        _camera = Camera.main;
     }
 
     private void Start()
@@ -43,16 +48,27 @@ public class Rapunzel : MonoBehaviour
             PickUp(hair);
         else if (other.gameObject.TryGetComponent(out FinishLine _))
         {
-            LieDown();
+            Finish();
             Finished?.Invoke();
         }
     }
 
-    private void LieDown()
+    private void Finish()
     {
         _leftRightMover.Stop();
         _follower.Stop();
-        _animator.Play("Laying");
+        _camera.transform.SetParent(null);
+        StartCoroutine(PrepareLying());
+    }
+
+    private IEnumerator PrepareLying()
+    {
+        transform.DOMove(_lyingPoint.position, 2.5f);
+        yield return new WaitForSeconds(2.5f);
+        
+        transform.Rotate(0, 180, 0);
+        
+        _animator.Play("Lying");
     }
     
     private void Walk()
